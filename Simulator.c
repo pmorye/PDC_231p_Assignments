@@ -54,8 +54,8 @@ double rand_normal(double mean, double stddev)
 
 void normal_distribution(int request[],int mean[], int p, int m){
 
-  int stddev = m/6;
-  for(int i=0;i<p;i++){
+  int stddev = m/6, i;
+  for(i=0;i<p;i++){
     if(request[i] == -1){
       unsigned int val = round(rand_normal((double)mean[i],(double)stddev));
       request[i] = val%m;
@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
     srand((unsigned)time( &t ));
     char d;
     int p, convergingCycleCnt = 0, idxOfFirstFail = -1;
+    int proc, cycle, i, j;
+
     p = atoi(argv[1]);
     d = *(char*)argv[2];
 
@@ -80,9 +82,9 @@ int main(int argc, char *argv[])
     fp = fopen("output.txt", "w+");
 
 
-    for(int i=1; i<=2048; i++)
+    for(i=1; i<=2048; i++)
     {
-        for(int j=0; j<p; j++)
+        for(j=0; j<p; j++)
         {
             requests[j] = -1;
         }
@@ -90,8 +92,9 @@ int main(int argc, char *argv[])
         uniform_distribution(mapping, p, i);
         int requestGrantCtr[p];
         double lastAvg = 0, current;
+
         //for each simulation, calculate and write the averages
-        for(int cycle = 1; cycle <= 1000000; cycle++)
+        for(cycle = 1; cycle <= 1000000; cycle++)
         {
             int modules[2049] = {0};
 
@@ -118,7 +121,7 @@ int main(int argc, char *argv[])
             double avgSum = 0;
             int toSkip = 0;
 
-            for(int proc = 0; proc < p; proc++)
+            for(proc = 0; proc < p; proc++)
             {
                 if(modules[requests[pos]] == 0)
                 {
