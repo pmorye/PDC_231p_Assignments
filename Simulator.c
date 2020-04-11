@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define EPSILON 0.02
+double EPSILON = 0.00002;
 
 
 
@@ -57,7 +57,7 @@ void normal_distribution(int request[],int mean[], int p, int m){
   int stddev = m/6, i;
   for(i=0;i<p;i++){
     if(request[i] == -1){
-      unsigned int val = round(rand_normal((double)mean[i],(double)stddev));
+      unsigned int val = round(rand_normal((double)mean[i], (double)stddev));
       request[i] = val%m;
     //   printf( "r[%d] = %d\n", i, request[i]);
     }
@@ -78,9 +78,17 @@ int main(int argc, char *argv[])
 
     int requests[p], mapping[p];
 
-    FILE *fp;
-    fp = fopen("output.txt", "w+");
-
+    FILE *fp_u, *fp_n;
+    
+    if(d == 'u')
+    {
+        fp_u = fopen("o-p_u.txt", "w+");
+    }
+    else
+    {
+        fp_n = fopen("o-p_n.txt", "w+");
+    }
+    
 
     for(i=1; i<=2048; i++)
     {
@@ -90,19 +98,24 @@ int main(int argc, char *argv[])
         }
         if(d == 'n')
         uniform_distribution(mapping, p, i);
-        int requestGrantCtr[p];
         double lastAvg = 0, current;
+        long requestGrantCtr[p];
+        int ctrpos;
+        for(ctrpos = 0; ctrpos<p; ctrpos++)
+        {
+            requestGrantCtr[ctrpos] = 0;
+        }
 
         //for each simulation, calculate and write the averages
         for(cycle = 1; cycle <= 1000000; cycle++)
         {
             int modules[2049] = {0};
-
-            // if(convergingCycleCnt > 10)          //terminating condition then break
-            //     {
-            //         convergingCycleCnt = 0;
-            //         break;
-            //     }
+        
+            if(convergingCycleCnt > 10)          //terminating condition then break
+            {
+                convergingCycleCnt = 0;
+                break;
+            }
 
             if(d == 'u')
                 uniform_distribution(requests, p, i);
@@ -140,6 +153,7 @@ int main(int argc, char *argv[])
                 else
                 {
                     avgSum += (double)cycle / (double)requestGrantCtr[pos];
+                    // printf("%d %ld\n", cycle, requestGrantCtr[pos]);
                     // printf("%f\n", avgSum);
                 }
                 pos = (pos + 1) % p;
@@ -147,10 +161,12 @@ int main(int argc, char *argv[])
 
             if(toSkip) {
                 toSkip = 0;
+                // printf("%d\n", idxOfFirstFail);
                 continue;
             }
 
             current = avgSum / (double)p;
+            // printf("%f\n", avgSum);
 
 
             if(lastAvg == 0) {
@@ -168,11 +184,27 @@ int main(int argc, char *argv[])
 
         }
 
-        printf("final %f\n", lastAvg);
-        fprintf(fp, "%f\n", lastAvg);
+        printf("final %lf and cycles used are %d\n", lastAvg, cycle);
+        if(d == 'u'){
+            fprintf(fp_u, "%lf\n", lastAvg);
+        }
+        else
+        {
+            fprintf(fp_n, "%lf\n", lastAvg);
+        }
+        
 
     }
 
-    fclose(fp);
+    if(d == 'u')
+    {
+        fclose(fp_u);
+    }
+    else
+    {
+        fclose(fp_n);
+    }
+    
+
     return 0;
 }
