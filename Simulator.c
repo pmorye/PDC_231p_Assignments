@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-double EPSILON = 0.00002;
+double EPSILON = 0.0002;
 
 
-
+//this function fills the request array with random module numbers uniformly
 void uniform_distribution(int request[], int p, int m ) {
    
     int i;
@@ -21,6 +21,7 @@ void uniform_distribution(int request[], int p, int m ) {
    }
 }
 
+//helper function for normal distribution
 double rand_normal(double mean, double stddev)
 {//Box muller method
     static double n2 = 0.0;
@@ -52,6 +53,7 @@ double rand_normal(double mean, double stddev)
     }
 }
 
+//this function takes the mean array and generates normally distributed module numbers around these mean values
 void normal_distribution(int request[],int mean[], int p, int m){
 
   int stddev = m/6, i;
@@ -64,6 +66,7 @@ void normal_distribution(int request[],int mean[], int p, int m){
   }
 }
 
+//main driver function
 int main(int argc, char *argv[])
 {
     time_t t;
@@ -90,6 +93,7 @@ int main(int argc, char *argv[])
     }
     
 
+    //loop through the module numbers
     for(i=1; i<=2048; i++)
     {
         for(j=0; j<p; j++)
@@ -111,7 +115,7 @@ int main(int argc, char *argv[])
         {
             int modules[2049] = {0};
         
-            if(convergingCycleCnt > 10)          //terminating condition then break
+            if(convergingCycleCnt > 10)          //if terminating condition is truethen break
             {
                 convergingCycleCnt = 0;
                 break;
@@ -122,11 +126,6 @@ int main(int argc, char *argv[])
             if(d == 'n')
                 normal_distribution(requests, mapping, p, i);
 
-            // for(int proc = 0; proc < p; proc++)
-            // {
-            //     printf("%d ", requests[proc]);
-            // }
-            // printf("\n");
 
             //loop through processor and requests and keep track of first unsuccessful request
             int pos = idxOfFirstFail == -1 ? 0 : idxOfFirstFail;
@@ -159,21 +158,20 @@ int main(int argc, char *argv[])
                 pos = (pos + 1) % p;
             }
 
+            // if there is even 1 processor which hasn't yet been granted, then skip calculation for this cycle
             if(toSkip) {
                 toSkip = 0;
-                // printf("%d\n", idxOfFirstFail);
                 continue;
             }
 
             current = avgSum / (double)p;
-            // printf("%f\n", avgSum);
-
 
             if(lastAvg == 0) {
                 lastAvg = current;
                 continue;
             }
 
+            //calculate the terminating condition and compare it to Epsilon value
             if(fabs(1.0 - lastAvg / current) < EPSILON) 
             {
                 lastAvg = current;
@@ -184,7 +182,7 @@ int main(int argc, char *argv[])
 
         }
 
-        printf("final %lf and cycles used are %d\n", lastAvg, cycle);
+        // printf("final %lf and cycles used are %d\n", lastAvg, cycle);
         if(d == 'u'){
             fprintf(fp_u, "%lf\n", lastAvg);
         }
@@ -205,6 +203,5 @@ int main(int argc, char *argv[])
         fclose(fp_n);
     }
     
-
     return 0;
 }
