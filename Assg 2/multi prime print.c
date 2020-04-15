@@ -8,8 +8,14 @@ const long UPPER = 10000000;
 
 typedef struct
 {
-    int availableThreadID, current;
+    int *availableThreadID, *current;
     pthread_mutex_t *pmtx;
+    Arg(int *a, int *c, pthread_mutex_t *p)
+    {
+        availableThreadID = a;
+        current = c;
+        pmtx = p;
+    }
 }Arg;
 
 void* isPrime(void* arg)
@@ -35,7 +41,7 @@ void primePrint(int numThreads)
     pthread_t threads[numThreads];
     pthread_mutex_t mutex;
     pthread_mutex_init(&mutex, NULL);
-
+    Arg()
     while(true)
     {
         
