@@ -39,8 +39,8 @@ void* primePrint(void *args)
         if(number > UPPER)
             break;
 
-        if(isPrime(number) == 1)
-            printf("%ld : %d\n", number, pthread_self());
+        if(isPrime(number) == 1);
+            // printf("%ld : %d\n", number, pthread_self());
             
     }
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     FILE *fp;
-    fp = fopen("output.txt", "w+");
+    fp = fopen("output.txt", "a+");
 
     pthread_t threads[numThreads] ;
     pthread_mutex_t mutex ;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
     
-    fprintf(fp, "%ld\n", elapsed);
+    fprintf(fp, "%d : %lf\n", numThreads, elapsed);
     fclose(fp);
     printf("%lf\n", elapsed);
 

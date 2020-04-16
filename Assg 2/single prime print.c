@@ -22,15 +22,15 @@ void primePrint()
 {
     long i;
     FILE *fp;
-    fp = fopen("output.txt", "w+");
+    // fp = fopen("output.txt", "w+");
 
     for(i=3; i<=UPPER; i++)
     {
-        if(isPrime(i) == 1)
-            fprintf(fp, "%ld\n", i);
+        if(isPrime(i) == 1);
+            // fprintf(fp, "%ld\n", i);
     }
 
-    fclose(fp);
+    // fclose(fp);
 }
 
 int main()
