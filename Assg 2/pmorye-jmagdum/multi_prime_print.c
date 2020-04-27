@@ -99,10 +99,10 @@ int main(int argc, char *argv[])
     }
 
     // once the threads have executed their function specified during creation, we use join to wait for their termination
-    // for(i=0; i<numThreads; ++i)
-    // {
-    //     pthread_join(threads[i], NULL);
-    // }
+    for(i=0; i<numThreads; ++i)
+    {
+        pthread_join(threads[i], NULL);
+    }
 
     // use of clock functionalities in c to obtain finish time of execution
     clock_gettime(CLOCK_MONOTONIC, &finish);
