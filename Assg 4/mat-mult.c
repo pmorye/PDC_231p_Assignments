@@ -1,131 +1,96 @@
-#include <stdio.h>
+#include "mat-mult.h"
 #include <pthread.h>
 #include <time.h>
 #include <math.h>
 #include <stdlib.h>
-#include <time.h>
+#include <stdio.h>
 
+// struct to bind mutext lock with the row counter and to pass other variables
 typedef struct Args
 {
     pthread_mutex_t *pmtx ;
     int *a, *currentRow, m, n;
 }Args;
 
-void myPrint(int *a, int N)
+// thread function to calculate 1 row of mat C
+void* row_multiply(void* args)
 {
-    int i, j;
-
-    for(i=0; i<N; i++)
-    {
-        for(j=0; j<N; j++)
-        {
-            printf("%d ", *(a + i*N + j));
-        }
-        printf("\n");
-    }
-}
-
-void multiply (int *a, int i, int m, int n)
-{
-
-    //getting location of start memories of matrices stored in memory
-    int *matA = a, *matB = (matA + m*n), *matC = (matB + m*n);
-    int j, k;
-
-    // printf("row is: %d\n", i);
-
-    for(j=0; j<n; j++)
-    {
-        for(k = 0; k<m; k++)
-        {
-            // printf("%d*%d\n", *(matA + i*n + k),(*(matB + k*n + j)));
-            *(matC + i*n + j) += *(matA + i*n + k)*(*(matB + k*n + j));
-        }
-    }
-
-    return;
-}
-
-void *call_parallel(void *args){
     int *a, rowCounter, m, n;
     Args *arguments = (Args*)args;
     a = arguments->a;
     m = arguments->m;
     n = arguments->n;
 
+    //getting location of start memories of matrices stored in memory
+    int *matA = a, *matB = (matA + m*n), *matC = (matB + m*n);
+
     while(1)
     {
+        // lock the row counter and update it after getting its value
         pthread_mutex_lock(arguments->pmtx);
         rowCounter = *arguments->currentRow;
         *(arguments->currentRow) = rowCounter+1;
         pthread_mutex_unlock(arguments->pmtx);
-        // printf("%d\n", rowCounter);
+
+        // break if all rows have been calculated
         if(rowCounter>=m) break;
-        multiply(a, rowCounter, m, n);
+        int j, k;
+
+        for(j=0; j<n; j++)
+        {
+            for(k = 0; k<m; k++)
+            {
+                // pointer arithmetic to get rows and columns
+                *(matC + rowCounter*n + j) += *(matA + rowCounter*n + k)*(*(matB + k*n + j));
+            }
+        }
     }
 
     pthread_exit(NULL);
 }
-int A[1024*3][1024];
-int main(int argc, char *argv[])
+
+void multiply(int* mat_ptr, int threads, int size)
 {
-    int N = atoi(argv[1]);
-    int numThreads = atoi(argv[2]);
     int i=0, j, k;
     time_t t;
     struct timespec start, finish;
     double elapsed;
-    
-    // int *matA = (int*)malloc(3*N*N);
-    int *matA = &A;
-    memset((void*)(matA + 2*N*N), 0, N*N);
-    int *matB = matA + N*N;
-    int *matC = matB + N*N;
-    pthread_t threads[numThreads];
+
+    pthread_t threadsarray[threads];
     pthread_mutex_t mutex;
     pthread_mutex_init(&mutex, NULL);
     
     srand((unsigned) time(&t));
 
-    for(k=0; k<2; k++)
-    {
-        for(i=0; i<N; i++)
-        {
-            for(j=0; j<N; j++)
-            {
-                *((matA + i*N) + j + N*N*k) = rand() % 10;
-            }
-        }
-    }
-    
-    // myPrint(matA, N);
-    // printf("\n");
-    // myPrint(matB, N);
-    // printf("\n");
-
     int rowCounter = 0;
-    Args arguments = {&mutex, matA, &rowCounter, N, N};
+    Args arguments = {&mutex, mat_ptr, &rowCounter, size, size};
 
+    //start measuring time
     clock_gettime(CLOCK_MONOTONIC, &start);
-    for(i=0; i<numThreads; i++)
+    for(i=0; i<threads; i++)
     {
-        pthread_create(&threads[i], NULL, &call_parallel, (void*)&arguments);
+        pthread_create(&threadsarray[i], NULL, &row_multiply, (void*)&arguments);
     }
     
-
-
-    for(i=0; i<numThreads; i++)
+    for(i=0; i<threads; i++)
     {
-        pthread_join(threads[i], NULL);
+        pthread_join(threadsarray[i], NULL);
     }
-    printf("here\n");
     clock_gettime(CLOCK_MONOTONIC, &finish);
+    //stop measuring time
+
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
 
-    // myPrint(matC, N);
-
     printf("\n%lf\n", elapsed);
-    // free(matA);
-    return 0;
+
+    printf("threads: %d, matrix: %dx%d\n", threads, size, size);
+    
+    //write outputs to file
+    FILE *fp;
+    fp = fopen("output.txt", "a+");
+    fprintf(fp, "%lf\n", elapsed);
+    fclose(fp);
+    
+    return;
 }
