@@ -82,7 +82,7 @@ void multiply(int* mat_ptr, int threads, int size)
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
 
-    printf("\n%lf\n", elapsed);
+    printf("time: \n%lf\n", elapsed);
 
     printf("threads: %d, matrix: %dx%d\n", threads, size, size);
     
