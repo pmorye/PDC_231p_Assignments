@@ -5,19 +5,6 @@
 #include <time.h>
 
 
-// function to check if the number is a prime number
-int isPrime(long number)
-{
-    long limit = sqrt(number), i;
-    // to reduce computations, our for loop runs till the square root of the number
-    for(i=2; i<=limit; i++)
-    {
-        if(number%i == 0) return 0;
-    }
-
-    return 1;
-}
-
 // initializes the matrix with values
 void fillMatrix(int *mat, int n)
 {
@@ -25,7 +12,6 @@ void fillMatrix(int *mat, int n)
 
     for(i=0; i<n*n; i++)
     {
-        printf("%ld\n", i);
         *(mat + i) = i;
     }
 }
@@ -69,7 +55,7 @@ int main(int argc, char *argv[])
     struct timespec start, finish;
     double elapsed;
     int N = atoi(argv[1]);
-    int *matPtr = (int*)malloc(N*sizeof(int));
+    int *matPtr = (int*)malloc(N*N*sizeof(int));
     
     fillMatrix(matPtr, N);
     // printMatrix(matPtr, N);
@@ -84,7 +70,7 @@ int main(int argc, char *argv[])
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
 
     // printMatrix(matPtr, N);
-    fp = fopen("output.txt", "a+");
+    fp = fopen("single_output.txt", "a+");
 
     // prints the execution time to file
     fprintf(fp, "%lf\n", elapsed);
