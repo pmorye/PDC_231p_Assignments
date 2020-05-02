@@ -1,96 +1,80 @@
 #include "mat-mult.h"
-#include <pthread.h>
+#include <stdio.h> //just to print stuff in screen
 #include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <pthread.h>
+#define BILLION  1000000000.0
 
-// struct to bind mutext lock with the row counter and to pass other variables
-typedef struct Args
+pthread_mutex_t mutex;//mutex lock
+int s;
+int *a, *b, *c;
+int i=-1;//shared counter used by all threads
+
+// This is the main function that represents each thread
+void *thread()
 {
-    pthread_mutex_t *pmtx ;
-    int *a, *currentRow, m, n;
-}Args;
+    //Threads should access this area one at a time so mutex lock used
+    pthread_mutex_lock(&mutex);
+    int x= ++i;
+    pthread_mutex_unlock(&mutex);
 
-// thread function to calculate 1 row of mat C
-void* row_multiply(void* args)
-{
-    int *a, rowCounter, m, n;
-    Args *arguments = (Args*)args;
-    a = arguments->a;
-    m = arguments->m;
-    n = arguments->n;
-
-    //getting location of start memories of matrices stored in memory
-    int *matA = a, *matB = (matA + m*n), *matC = (matB + m*n);
-
-    while(1)
-    {
-        // lock the row counter and update it after getting its value
-        pthread_mutex_lock(arguments->pmtx);
-        rowCounter = *arguments->currentRow;
-        *(arguments->currentRow) = rowCounter+1;
-        pthread_mutex_unlock(arguments->pmtx);
-
-        // break if all rows have been calculated
-        if(rowCounter>=m) break;
-        int j, k;
-
-        for(j=0; j<n; j++)
-        {
-            for(k = 0; k<m; k++)
-            {
-                // pointer arithmetic to get rows and columns
-                *(matC + rowCounter*n + j) += *(matA + rowCounter*n + k)*(*(matB + k*n + j));
+    while(x<s){
+        for(int j=0;j<s;j++){
+            for(int k=0;k<s;k++){
+                //calculate the xth row
+                *(c+x*s+j) += *(a+x*s+k) * *(b+k*s+j);
             }
+        }
+        //Increment shared counter so that next row can be calculated
+        pthread_mutex_lock(&mutex);
+        x= ++i;
+        pthread_mutex_unlock(&mutex);
+    }
+    pthread_exit(0);
+
+    // execute till global i reaches row size.
+    // Thus, the thread that finishes executing first will get the next i
+    // and increase it so that next thread gets up to date i.
+
+
+    pthread_exit(0);
+}
+
+void multiply(int* mat_ptr, int threads, int size){
+
+    struct timespec start, end;
+
+    a=mat_ptr;
+    s=size;
+    b=(a+size*size);
+    c=(b+size*size);
+
+    // note start time
+    clock_gettime(CLOCK_REALTIME, &start);
+    // driver thread that spawns threads and joins them after their completion
+
+    pthread_mutex_init(&mutex, NULL);
+    pthread_t tid[threads];
+
+    // spawn threads
+    for(long i=0; i<threads; i++)
+    {
+        int ret=pthread_create(&tid[i],NULL, thread, NULL);
+        if(ret){
+            printf("Error during thread creation.\n");
+            exit(-1);
         }
     }
 
-    pthread_exit(NULL);
-}
-
-void multiply(int* mat_ptr, int threads, int size)
-{
-    int i=0, j, k;
-    time_t t;
-    struct timespec start, finish;
-    double elapsed;
-
-    pthread_t threadsarray[threads];
-    pthread_mutex_t mutex;
-    pthread_mutex_init(&mutex, NULL);
-    
-    srand((unsigned) time(&t));
-
-    int rowCounter = 0;
-    Args arguments = {&mutex, mat_ptr, &rowCounter, size, size};
-
-    //start measuring time
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    for(i=0; i<threads; i++)
+    // calling join will pause the main thread till the execution of the argument thread is not complete.
+    for(long i=0;i<threads;i++)
     {
-        pthread_create(&threadsarray[i], NULL, &row_multiply, (void*)&arguments);
+        pthread_join(tid[i],NULL);
     }
-    
-    for(i=0; i<threads; i++)
-    {
-        pthread_join(threadsarray[i], NULL);
-    }
-    clock_gettime(CLOCK_MONOTONIC, &finish);
-    //stop measuring time
+    // note end time
+    clock_gettime(CLOCK_REALTIME, &end);
 
-    elapsed = (finish.tv_sec - start.tv_sec);
-    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
+    double time_spent = (end.tv_sec - start.tv_sec) +
+                            (end.tv_nsec - start.tv_nsec) / BILLION;
 
-    printf("time: \n%lf\n", elapsed);
-
-    printf("threads: %d, matrix: %dx%d\n", threads, size, size);
-    
-    //write outputs to file
-    FILE *fp;
-    fp = fopen("output.txt", "a+");
-    fprintf(fp, "%lf\n", elapsed);
-    fclose(fp);
-    
-    return;
+    //printf("Computation Time = %0.4f\n", time_spent);
 }

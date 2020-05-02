@@ -4,8 +4,6 @@
 #include <math.h>
 #include <time.h>
 
-// setting the upper bound for finding primes
-const long UPPER = 10000000;
 FILE *fp;
 
 // function to check if the number is a prime number
