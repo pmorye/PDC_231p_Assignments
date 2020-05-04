@@ -15,7 +15,7 @@ void* transposeSingle(void* a)
 {
     Args *arguments = (Args*)a;
     int ctr, i, j, n, temp, *matptr, delta, dctr;
-    
+
     matptr = arguments->a;
     delta = arguments->delta;
 
@@ -25,7 +25,7 @@ void* transposeSingle(void* a)
         ctr = *arguments->ctr;
         *arguments->ctr = ctr+delta;
         pthread_mutex_unlock(arguments->pmtx);
-        
+
         n = arguments->N;
         if(ctr>n*n - 1) break;
 
@@ -36,8 +36,8 @@ void* transposeSingle(void* a)
             i = floor((double)ctr/(double)n);
             j = ctr%n;
             // printf("%d %d %x\n", i, j, pthread_self());
-            if(j<=i) 
-            {   
+            if(j<=i)
+            {
                 ctr++;
                 continue;
             }
@@ -49,7 +49,7 @@ void* transposeSingle(void* a)
         }
 
     }
-    
+
     pthread_exit(NULL);
 }
 
@@ -72,9 +72,9 @@ void printMatrix(int *mat, int n)
     {
         for(j=0; j<n; j++)
         {
-            printf("%d ", *(mat + i*n + j));
+            printf("%d \n", *(mat + i*n + j));
         }
-        printf("\n");
+        //printf("\n");
     }
 }
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
     int ctr = 0;
     Args arguments = {&mutex, &ctr, N, matPtr, delta};
-    
+
     fillMatrix(matPtr, N);
     // printMatrix(matPtr, N);
     // printf("\n");
@@ -115,14 +115,15 @@ int main(int argc, char *argv[])
     clock_gettime(CLOCK_MONOTONIC, &finish);
     // printf("after\n");
     elapsed = (finish.tv_sec - start.tv_sec);
-    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 
-    printMatrix(matPtr, N);
+    if(N==8)
+      printMatrix(matPtr, N);
     fp = fopen("coarse_output.txt", "a+");
 
     // prints the execution time to file
     fprintf(fp, "%lf\n", elapsed);
-    printf("%lf\n", elapsed);
+    //printf("%lf\n", elapsed);
     fclose(fp);
     free(matPtr);
 

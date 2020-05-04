@@ -42,9 +42,9 @@ void printMatrix(int *mat, int n)
     {
         for(j=0; j<n; j++)
         {
-            printf("%d ", *(mat + i*n + j));
+            printf("%d \n", *(mat + i*n + j));
         }
-        printf("\n");
+        //printf("\n");
     }
 }
 
@@ -56,20 +56,21 @@ int main(int argc, char *argv[])
     double elapsed;
     int N = atoi(argv[1]);
     int *matPtr = (int*)malloc(N*N*sizeof(int));
-    
+
     fillMatrix(matPtr, N);
     // printMatrix(matPtr, N);
     // printf("\n");
-    
+
     // use of clock functionalities in c to obtain start time of execution
     clock_gettime(CLOCK_MONOTONIC, &start);
     transposeMatrix(matPtr, N);
     clock_gettime(CLOCK_MONOTONIC, &finish);
 
     elapsed = (finish.tv_sec - start.tv_sec);
-    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 
-    // printMatrix(matPtr, N);
+    if(N==8)
+        printMatrix(matPtr, N);
     fp = fopen("single_output.txt", "a+");
 
     // prints the execution time to file
