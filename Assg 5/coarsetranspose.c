@@ -8,35 +8,46 @@
 typedef struct Args
 {
     pthread_mutex_t *pmtx;
-    int *ctr, N, *a;
+    int *ctr, N, *a, delta;
 }Args;
 
 void* transposeSingle(void* a)
 {
     Args *arguments = (Args*)a;
-    int ctr, i, j, n, temp, *matptr;
+    int ctr, i, j, n, temp, *matptr, delta, dctr;
     
     matptr = arguments->a;
+    delta = arguments->delta;
 
     while(1)
     {
         pthread_mutex_lock(arguments->pmtx);
         ctr = *arguments->ctr;
-        *arguments->ctr = ctr+1;
+        *arguments->ctr = ctr+delta;
         pthread_mutex_unlock(arguments->pmtx);
         
         n = arguments->N;
-
-        i = floor((double)ctr/(double)n);
-        j = ctr%n;
-        // printf("%d %d %x\n", i, j, pthread_self());
-
         if(ctr>n*n - 1) break;
-        if(j <= i) continue;
 
-        temp = *(matptr + i*n + j);
-        *(matptr + i*n + j) = *(matptr + j*n + i);
-        *(matptr + j*n + i) = temp;
+        // loop over the ctr delta times
+        for(dctr=0; dctr<delta; dctr++)
+        {
+            if(ctr>n*n - 1) break;
+            i = floor((double)ctr/(double)n);
+            j = ctr%n;
+            // printf("%d %d %x\n", i, j, pthread_self());
+            if(j<=i) 
+            {   
+                ctr++;
+                continue;
+            }
+
+            temp = *(matptr + i*n + j);
+            *(matptr + i*n + j) = *(matptr + j*n + i);
+            *(matptr + j*n + i) = temp;
+            ctr++;
+        }
+
     }
     
     pthread_exit(NULL);
@@ -75,6 +86,7 @@ int main(int argc, char *argv[])
     double elapsed;
     int N = atoi(argv[1]);
     int numthreads = atoi(argv[2]);
+    int delta = atoi(argv[3]);
     int *matPtr = (int*)malloc(N*N*sizeof(int));
     pthread_t threads[numthreads];
     pthread_mutex_t mutex;
@@ -83,12 +95,12 @@ int main(int argc, char *argv[])
     int i;
 
     int ctr = 0;
-    Args arguments = {&mutex, &ctr, N, matPtr};
+    Args arguments = {&mutex, &ctr, N, matPtr, delta};
     
     fillMatrix(matPtr, N);
     // printMatrix(matPtr, N);
     // printf("\n");
-    printf("before\n");
+    // printf("before\n");
     // use of clock functionalities in c to obtain start time of execution
     clock_gettime(CLOCK_MONOTONIC, &start);
     for(i=0; i<numthreads; i++)
@@ -101,12 +113,12 @@ int main(int argc, char *argv[])
         pthread_join(threads[i], NULL);
     }
     clock_gettime(CLOCK_MONOTONIC, &finish);
-    printf("after\n");
+    // printf("after\n");
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0; 
 
-    // printMatrix(matPtr, N);
-    fp = fopen("fine_output.txt", "a+");
+    printMatrix(matPtr, N);
+    fp = fopen("coarse_output.txt", "a+");
 
     // prints the execution time to file
     fprintf(fp, "%lf\n", elapsed);
